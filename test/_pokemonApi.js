@@ -57,4 +57,17 @@ describe("Pokemon API Server", () => {
       JSON.parse(res.text).name.should.equal("Golbat");
     });
   });
+  describe("PATCH /api/pokemon/:idOrName", () => {
+    it("should allow modifications", async () => {
+      const res = await request.get("/api/pokemon/Golbat/?update=maxCP,1478");
+      JSON.parse(res.text).maxCP.should.equal("1478");
+    });
+  });
+  describe("DELETE /api/pokemon/:idOrName", () => {
+    it("should remove a Pokemon from the array", async () => {
+      const oldLength = pokeData.pokemon.length;
+      const res = await request.get("/api/pokemon/Golbat/?remove=Golbat");
+      JSON.parse(res.text).length.should.equal(oldLength - 1);
+    });
+  });
 });

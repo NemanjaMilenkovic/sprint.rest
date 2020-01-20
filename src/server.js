@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 const pokeData = require("./data");
 const express = require("express");
 
@@ -33,32 +34,49 @@ const setupServer = () => {
   });
 
   app.get("/api/pokemon/:idOrName/", (req, res) => {
+    let returnPoke;
     const idOrName = req.params;
     const update = req.query.update;
+    const remove = req.query.remove;
 
     if (idOrName !== undefined && update !== undefined) {
       const updateName = update.split(",")[0];
       const updateValue = update.split(",")[1];
+      getPoke(idOrName);
+
+      if (returnPoke.hasOwnProperty(updateName)) {
+        returnPoke[updateName] = updateValue;
+      }
+    } else if (idOrName !== undefined && remove !== undefined) {
+      removePoke(idOrName);
+      res.send(pokemon);
+      return;
+    } else {
+      getPoke(idOrName);
+    }
+
+    function removePoke(idOrName) {
+      getPoke(idOrName);
+      console.log("pokemon.length :", pokemon.length);
+      pokemon.splice(pokemon.indexOf(returnPoke), 1);
+      console.log("pokemon.length :", pokemon.length);
     }
 
     function getPoke(idOrName) {
       if (parseInt(idOrName.idOrName)) {
         if (pokemon[parseInt(idOrName.idOrName) - 1]) {
-          res.send(pokemon[parseInt(idOrName.idOrName) - 1]);
+          returnPoke = pokemon[parseInt(idOrName.idOrName) - 1];
         }
       } else {
-        console.log("idOrName :", idOrName);
         idOrName = idOrName.idOrName.toLowerCase();
         for (const poke of pokemon) {
           if (poke.name.toLowerCase() === idOrName) {
-            res.send(poke);
+            returnPoke = poke;
           }
         }
       }
     }
-    getPoke(idOrName);
-
-    res.end();
+    res.send(returnPoke);
   });
 
   return app;
