@@ -12,6 +12,7 @@ const setupServer = () => {
   const attacks = pokeData.attacks;
   const app = express();
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   function getPoke(idOrName) {
     let returnPoke;
@@ -156,8 +157,107 @@ const setupServer = () => {
     if (limit === undefined) {
       res.send(attacks);
     } else {
-      res.send(attacks.slice(0, limit));
+      const allAttacks = attacks.fast.concat(attacks.special);
+      res.send(allAttacks.slice(0, limit));
     }
+  });
+
+  app.get("/api/attacks/fast", (req, res) => {
+    const limit = req.query.limit;
+    if (limit === undefined) {
+      res.send(attacks.fast);
+    } else {
+      res.send(attacks.fast.slice(0, limit));
+    }
+  });
+
+  app.get("/api/attacks/special", (req, res) => {
+    const limit = req.query.limit;
+    if (limit === undefined) {
+      res.send(attacks.special);
+    } else {
+      res.send(attacks.special.slice(0, limit));
+    }
+  });
+
+  app.get("/api/attacks/:name", (req, res) => {
+    let name = req.params;
+    name =
+      name.name.charAt(0).toUpperCase() + name.name.substring(1).toLowerCase();
+    const allAttacks = attacks.fast.concat(attacks.special);
+    const att = allAttacks.filter((poke) => {
+      return poke.name === name;
+    });
+    res.send(att[0]);
+  });
+
+  app.get("/api/attacks/:name/pokemon", (req, res) => {
+    let name = req.params;
+    name =
+      name.name.charAt(0).toUpperCase() + name.name.substring(1).toLowerCase();
+    const pokeByAttack = pokemon
+      .filter((poke) => {
+        const loopThroughAttacks = () => {
+          for (const attack of poke.attacks.fast) {
+            if (attack.name === name) return true;
+          }
+          for (const attack of poke.attacks.special) {
+            if (attack.name === name) return true;
+          }
+          return false;
+        };
+        return loopThroughAttacks();
+      })
+      .map((poke) => ({ name: poke.name, id: poke.id }));
+    res.send(pokeByAttack);
+  });
+  app.post("/api/attacks/fast", (req, res) => {
+    const add = req.body;
+    attacks.fast.push(add);
+    res.send(add);
+  });
+  app.post("/api/attacks/special", (req, res) => {
+    const add = req.body;
+    attacks.special.push(add);
+    res.send(add);
+  });
+  app.patch("/api/attacks/:name", (req, res) => {
+    const update = req.body;
+    let modifiedAttack;
+    let name = req.params;
+    name =
+      name.name.charAt(0).toUpperCase() + name.name.substring(1).toLowerCase();
+    for (let attack of attacks.fast) {
+      if (attack.name === name) {
+        attack = update;
+        modifiedAttack = attack;
+      }
+    }
+    for (let attack of attacks.special) {
+      if (attack.name === name) {
+        attack = update;
+        modifiedAttack = attack;
+      }
+    }
+    res.send(modifiedAttack);
+  });
+
+  app.delete("/api/attacks/:name", (req, res) => {
+    let name = req.params;
+    name =
+      name.name.charAt(0).toUpperCase() + name.name.substring(1).toLowerCase();
+    for (const attack of attacks.fast) {
+      if (attack.name === name) {
+        attacks.fast.splice(attacks.fast.indexOf(attack), 1);
+      }
+    }
+    for (const attack of attacks.special) {
+      if (attack.name === name) {
+        attacks.special.splice(attacks.special.indexOf(attack), 1);
+      }
+    }
+    const allAttacks = attacks.fast.concat(attacks.special);
+    res.send(allAttacks);
   });
 
   return app;

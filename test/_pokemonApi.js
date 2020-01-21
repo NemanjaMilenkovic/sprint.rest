@@ -160,8 +160,97 @@ describe("Pokemon API Server", () => {
       JSON.parse(res.text).should.deep.equal(pokeData.attacks);
     });
     it("should take a query parameter limit=n", async () => {
-      const res = await request.get("/api/types?limit=2");
+      const res = await request.get("/api/attacks/?limit=1");
+      JSON.parse(res.text).length.should.equal(1);
+    });
+  });
+
+  describe("GET /api/attacks/fast", () => {
+    it("should return a full list of available fast attacks", async () => {
+      const res = await request.get("/api/attacks/fast");
+      JSON.parse(res.text).should.deep.equal(pokeData.attacks.fast);
+    });
+    it("should take a query parameter limit=n", async () => {
+      const res = await request.get("/api/attacks/fast/?limit=2");
       JSON.parse(res.text).length.should.equal(2);
+    });
+  });
+
+  describe("GET /api/attacks/special", () => {
+    it("should return a full list of available special attacks", async () => {
+      const res = await request.get("/api/attacks/special");
+      JSON.parse(res.text).should.deep.equal(pokeData.attacks.special);
+    });
+    it("should take a query parameter limit=n", async () => {
+      const res = await request.get("/api/attacks/special/?limit=2");
+      JSON.parse(res.text).length.should.equal(2);
+    });
+  });
+
+  describe("GET /api/attacks/:name", () => {
+    it("should get a specific attack by name, no matter if it is fast or special", async () => {
+      const bubble = {
+        name: "Bubble",
+        type: "Water",
+        damage: 25,
+      };
+      const res = await request.get("/api/attacks/Bubble");
+      JSON.parse(res.text).should.deep.equal(bubble);
+    });
+  });
+  describe("GET /api/attacks/:name/pokemon", () => {
+    it("should return all Pokemon with a given attack", async () => {
+      const bubblePoke = [];
+      for (const poke of pokeData.pokemon) {
+        for (const attack of poke.attacks.fast) {
+          if (attack.name === "Bubble") {
+            bubblePoke.push({ name: poke.name, id: poke.id });
+          }
+        }
+      }
+      const res = await request.get("/api/attacks/Bubble/pokemon");
+      JSON.parse(res.text).should.deep.equal(bubblePoke);
+    });
+  });
+  describe("POST /api/attacks/fast", () => {
+    it("should post a fast attack", async () => {
+      const expected = {
+        name: "Bubbles",
+        type: "Water",
+        damage: 95,
+      };
+      const res = await request.post("/api/attacks/fast/").send(expected);
+      JSON.parse(res.text).should.deep.equal(expected);
+    });
+  });
+  describe("POST /api/attacks/special", () => {
+    it("should post a special attack", async () => {
+      const expected = {
+        name: "Tsunamis",
+        type: "Water",
+        damage: 200,
+      };
+      const res = await request.post("/api/attacks/special/").send(expected);
+      JSON.parse(res.text).should.deep.equal(expected);
+    });
+  });
+  describe("PATCH /api/attacks/:name", () => {
+    it("should modify specified attack", async () => {
+      const expected = {
+        name: "Tsunami",
+        type: "Water",
+        damage: 105,
+      };
+      const res = await request.patch("/api/attacks/Tsunamis/").send(expected);
+      JSON.parse(res.text).should.deep.equal(expected);
+    });
+  });
+  describe("DELETE /api/attacks/:name", () => {
+    it("should delete a given attack", async () => {
+      const allAttacks = pokeData.attacks.fast.concat(pokeData.attacks.special);
+      const oldLength = allAttacks.length;
+      const res = await request.delete("/api/attacks/Tackle");
+      JSON.parse(res.text).length.should.equal(oldLength - 1);
     });
   });
 });
